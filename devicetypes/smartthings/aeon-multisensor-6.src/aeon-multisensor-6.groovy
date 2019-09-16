@@ -13,7 +13,7 @@
  */
 
 metadata {
-	definition(name: "Aeon Multisensor 6", namespace: "smartthings", author: "SmartThings", runLocally: true, minHubCoreVersion: '000.020.00008', executeCommandsLocally: true) {
+	definition(name: "Aeon Multisensor 6", namespace: "smartthings", author: "SmartThings", runLocally: true, minHubCoreVersion: '000.020.00008', executeCommandsLocally: true, ocfDeviceType: "x.com.st.d.sensor.motion") {
 		capability "Motion Sensor"
 		capability "Temperature Measurement"
 		capability "Relative Humidity Measurement"
@@ -69,15 +69,12 @@ metadata {
 	}
 
 	preferences {
-		input description: "Please consult AEOTEC MULTISENSOR 6 operating manual for advanced setting options. You can skip this configuration to use default settings",
-			title: "Advanced Configuration", type: "paragraph", element: "paragraph"
-
 		input "motionDelayTime", "enum", title: "Motion Sensor Delay Time",
 			options: ["20 seconds", "40 seconds", "1 minute", "2 minutes", "3 minutes", "4 minutes"]
 
 		input "motionSensitivity", "enum", title: "Motion Sensor Sensitivity", options: ["maximum", "normal", "minimum", "disabled"]
 
-		input "reportInterval", "enum", title: "Sensors Report Interval",
+		input "reportInterval", "enum", title: "Report Interval", description: "How often the device should report in minutes",
 			options: ["8 minutes", "15 minutes", "30 minutes", "1 hour", "6 hours", "12 hours", "18 hours", "24 hours"]
 	}
 
@@ -442,10 +439,7 @@ def configure() {
 
 	// set the check interval based on the report interval preference. (default 122 minutes)
 	// we do this here in case the device is in wakeup mode
-	def checkInterval = 2 * 60 * 60 + 2 * 60
-	if (reportInterval) {
-		checkInterval = 2 * timeOptionValueMap[reportInterval] + (2 * 60)
-	}
+	def checkInterval = 2 * (timeOptionValueMap[reportInterval] ?: 60 * 60) + 2 * 60
 	sendEvent(name: "checkInterval", value: checkInterval, displayed: false, data: [protocol: "zwave", hubHardwareId: device.hub.hardwareID])
 
 	commands(request, (state.sec || zwaveInfo?.zw?.endsWith("s")) ? 2000 : 500) + ["delay 20000", zwave.wakeUpV1.wakeUpNoMoreInformation().format()]
